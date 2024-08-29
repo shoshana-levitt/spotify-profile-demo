@@ -7,6 +7,7 @@
   </head>
   <body>
     <h1>Display your Spotify profile data</h1>
+
     <section id="profile">
       <h2>Logged in as <span id="displayName"></span></h2>
       <span id="avatar"></span>
@@ -18,10 +19,16 @@
         <li>Profile Image: <span id="imgUrl"></span></li>
       </ul>
     </section>
+    <section id="topTracks">
+      <h2>Your Top Tracks</h2>
+    </section>
+    <section id="topArtists">
+      <h2>Your Top Artists</h2>
+    </section>
   </body>
 </html>
 
-<!-- Note- We're referring directly to the TypeScript file,
+<!-- Note: We're referring directly to the TypeScript file,
  and we're using the `type="module"` attribute.
  Vite will transpile our TypeScript to JavaScript
  so that it can run in the browser. -->
