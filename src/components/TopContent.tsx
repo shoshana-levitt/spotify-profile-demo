@@ -23,6 +23,7 @@ const timeRanges = {
 
 const TopContent: React.FC = () => {
   const [topTracks, setTopTracks] = useState<Track[]>([]);
+  const [newTracksTitles, setNewTracksTitles] = useState<string[]>([]);
   const [topArtists, setTopArtists] = useState<Artist[]>([]);
   const [activeTab, setActiveTab] = useState("shortTerm");
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +96,11 @@ const TopContent: React.FC = () => {
         image: artist.images[0]?.url || "",
       }));
 
+      const newTracksTitles = newTracks.map(
+        (track: any) => `${track.name} by ${track.artist}`
+      );
+      console.log(newTracksTitles);
+      setNewTracksTitles(newTracksTitles);
       setTopTracks(newTracks);
       setTopArtists(newArtists);
     } catch (error) {
