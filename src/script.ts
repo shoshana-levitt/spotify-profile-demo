@@ -1,3 +1,8 @@
+import {
+  generateCodeVerifier,
+  generateCodeChallenge,
+} from "./spotifyAuthUtils";
+
 export const clientId = import.meta.env.VITE_CLIENT_ID;
 export const params = new URLSearchParams(window.location.search);
 export const code = params.get("code");
@@ -55,23 +60,4 @@ export async function redirectToAuthCodeFlow(clientId: string) {
   params.append("code_challenge_method", "S256");
   params.append("code_challenge", challenge);
   document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
-}
-
-function generateCodeVerifier(length: number) {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
-}
-
-async function generateCodeChallenge(codeVerifier: string) {
-  const data = new TextEncoder().encode(codeVerifier);
-  const digest = await window.crypto.subtle.digest("SHA-256", data);
-  return btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
 }
