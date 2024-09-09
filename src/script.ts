@@ -8,6 +8,12 @@ if (!clientId) {
   );
 }
 
+const timeRanges = {
+  shortTerm: "short_term",
+  mediumTerm: "medium_term",
+  longTerm: "long_term",
+};
+
 if (!code) {
   redirectToAuthCodeFlow(clientId);
 } else {
@@ -15,19 +21,72 @@ if (!code) {
     const accessToken = await getAccessToken(clientId, code);
     const profile = await fetchProfile(accessToken);
     populateUI(profile);
-    const topTracks = await fetchTopTracks(accessToken);
-    populateTopTracks(topTracks.items);
-    const topArtists = await fetchTopArtists(accessToken);
-    populateTopArtists(topArtists.items);
+
+    // Event listeners should be added only after accessToken is available
+    setupTabListeners(accessToken); // NEW: Setup event listeners for tabs
+
+    // Load medium term data by default
+    loadTopTracksAndArtists(accessToken, timeRanges.mediumTerm);
   })();
+}
+
+function setupTabListeners(accessToken: string) {
+  document.getElementById("shortTerm")!.addEventListener("click", () => {
+    setActiveTab("shortTerm");
+    loadTopTracksAndArtists(accessToken, timeRanges.shortTerm);
+  });
+
+  document.getElementById("mediumTerm")!.addEventListener("click", () => {
+    setActiveTab("mediumTerm");
+    loadTopTracksAndArtists(accessToken, timeRanges.mediumTerm);
+  });
+
+  document.getElementById("longTerm")!.addEventListener("click", () => {
+    setActiveTab("longTerm");
+    loadTopTracksAndArtists(accessToken, timeRanges.longTerm);
+  });
+}
+
+async function loadTopTracksAndArtists(token: string, timeRange: string) {
+  const topTracks = await fetchTopTracks(token, timeRange);
+  populateTopTracks(topTracks.items);
+  const topArtists = await fetchTopArtists(token, timeRange);
+  populateTopArtists(topArtists.items);
+}
+
+async function fetchTopTracks(token: string, timeRange: string): Promise<any> {
+  const result = await fetch(
+    `https://api.spotify.com/v1/me/top/tracks?time_range=${timeRange}`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return await result.json();
+}
+
+async function fetchTopArtists(token: string, timeRange: string): Promise<any> {
+  const result = await fetch(
+    `https://api.spotify.com/v1/me/top/artists?time_range=${timeRange}`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return await result.json();
+}
+
+function setActiveTab(activeButtonId: string) {
+  document.querySelectorAll("#timeRangeTabs button").forEach((button) => {
+    button.classList.remove("active"); // Remove 'active' class from all buttons
+  });
+  document.getElementById(activeButtonId)!.classList.add("active"); // Add 'active' class to clicked button
 }
 
 export async function redirectToAuthCodeFlow(clientId: string) {
   const verifier = generateCodeVerifier(128);
   const challenge = await generateCodeChallenge(verifier);
-
   localStorage.setItem("verifier", verifier);
-
   const params = new URLSearchParams();
   params.append("client_id", clientId);
   params.append("response_type", "code");
@@ -35,7 +94,6 @@ export async function redirectToAuthCodeFlow(clientId: string) {
   params.append("scope", "user-read-private user-read-email user-top-read");
   params.append("code_challenge_method", "S256");
   params.append("code_challenge", challenge);
-
   document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
 }
 
@@ -43,7 +101,6 @@ function generateCodeVerifier(length: number) {
   let text = "";
   const possible =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
   for (let i = 0; i < length; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
@@ -64,20 +121,17 @@ export async function getAccessToken(
   code: string
 ): Promise<string> {
   const verifier = localStorage.getItem("verifier");
-
   const params = new URLSearchParams();
   params.append("client_id", clientId);
   params.append("grant_type", "authorization_code");
   params.append("code", code);
   params.append("redirect_uri", "http://localhost:5173/callback");
   params.append("code_verifier", verifier!);
-
   const result = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params,
   });
-
   const { access_token } = await result.json();
   return access_token;
 }
@@ -87,7 +141,6 @@ async function fetchProfile(token: string): Promise<UserProfile> {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
-
   return await result.json();
 }
 
@@ -110,38 +163,56 @@ function populateUI(profile: UserProfile) {
     profile.images[0]?.url ?? "(no profile image)";
 }
 
-async function fetchTopTracks(token: string): Promise<any> {
-  const result = await fetch("https://api.spotify.com/v1/me/top/tracks", {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return await result.json();
-}
-
-async function fetchTopArtists(token: string): Promise<any> {
-  const result = await fetch("https://api.spotify.com/v1/me/top/artists", {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return await result.json();
-}
-
 function populateTopTracks(tracks: any[]) {
   const topTracksContainer = document.getElementById("topTracks")!;
-  tracks.forEach((track) => {
+
+  // Clear only the track list, not the header
+  const existingTracks = topTracksContainer.querySelector(".tracks-list");
+  if (existingTracks) {
+    existingTracks.remove();
+  }
+
+  // Create a container for the track list
+  const tracksList = document.createElement("div");
+  tracksList.classList.add("tracks-list");
+
+  // Use a DocumentFragment for efficient DOM updates
+  const fragment = document.createDocumentFragment();
+
+  tracks.forEach((track, index) => {
     const trackElement = document.createElement("div");
-    trackElement.innerText = `${track.name} by ${track.artists
+    trackElement.innerText = `${index + 1}. ${track.name} by ${track.artists
       .map((artist: any) => artist.name)
-      .join(", ")}`;
-    topTracksContainer.appendChild(trackElement);
+      .join(", ")}`; // Add numbering
+    fragment.appendChild(trackElement); // Add track to fragment
   });
+
+  tracksList.appendChild(fragment);
+  topTracksContainer.appendChild(tracksList); // Add the track list to the container
 }
 
 function populateTopArtists(artists: any[]) {
   const topArtistsContainer = document.getElementById("topArtists")!;
-  artists.forEach((artist) => {
+
+  // Clear only the artist list, not the header
+  const existingArtists = topArtistsContainer.querySelector(".artists-list");
+  if (existingArtists) {
+    existingArtists.remove();
+  }
+
+  // Create a container for the artist list
+  const artistsList = document.createElement("div");
+  artistsList.classList.add("artists-list");
+
+  // Use a DocumentFragment for efficient DOM updates
+  const fragment = document.createDocumentFragment();
+
+  artists.forEach((artist, index) => {
     const artistElement = document.createElement("div");
-    artistElement.innerText = artist.name;
-    topArtistsContainer.appendChild(artistElement);
+    artistElement.innerText = `${index + 1}. ${artist.name}`; // Add numbering
+    fragment.appendChild(artistElement); // Add artist to fragment
   });
+
+  artistsList.appendChild(fragment);
+  topArtistsContainer.appendChild(artistsList); // Add the artist list to the container
 }

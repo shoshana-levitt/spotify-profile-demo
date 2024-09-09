@@ -4,13 +4,29 @@
     <meta charset="utf-8" />
     <title>My Spotify Profile</title>
     <script src="src/script.ts" type="module"></script>
+    <style>
+      #timeRangeTabs {
+        margin-bottom: 20px;
+      }
+      #timeRangeTabs button {
+        margin-right: 10px;
+        padding: 10px;
+        border: none;
+        background-color: #f0f0f0;
+        cursor: pointer;
+      }
+      #timeRangeTabs button.active {
+        background-color: #0073e6;
+        color: white;
+      }
+    </style>
   </head>
   <body>
     <h1>Display your Spotify profile data</h1>
 
     <section id="profile">
       <h2>Logged in as <span id="displayName"></span></h2>
-      <span id="avatar"></span>
+      <div id="avatar"></div>
       <ul>
         <li>User ID: <span id="id"></span></li>
         <li>Email: <span id="email"></span></li>
@@ -19,9 +35,20 @@
         <li>Profile Image: <span id="imgUrl"></span></li>
       </ul>
     </section>
+
+    <section id="timeRangeSelection">
+      <div id="timeRangeTabs">
+        <button id="shortTerm">Short Term</button>
+        <button id="mediumTerm" class="active">Medium Term</button>
+        <!-- Default tab -->
+        <button id="longTerm">Long Term</button>
+      </div>
+    </section>
+
     <section id="topTracks">
       <h2>Your Top Tracks</h2>
     </section>
+
     <section id="topArtists">
       <h2>Your Top Artists</h2>
     </section>
