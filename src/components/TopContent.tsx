@@ -24,7 +24,7 @@ const timeRanges = {
 const TopContent: React.FC = () => {
   const [topTracks, setTopTracks] = useState<Track[]>([]);
   const [topArtists, setTopArtists] = useState<Artist[]>([]);
-  const [activeTab, setActiveTab] = useState("mediumTerm");
+  const [activeTab, setActiveTab] = useState("shortTerm");
   const [error, setError] = useState<string | null>(null);
 
   const handleReLogin = () => {
@@ -128,19 +128,19 @@ const TopContent: React.FC = () => {
           className={activeTab === "shortTerm" ? "active" : ""}
           onClick={() => handleTabClick("shortTerm")}
         >
-          Short Term
+          Past Month
         </button>
         <button
           className={activeTab === "mediumTerm" ? "active" : ""}
           onClick={() => handleTabClick("mediumTerm")}
         >
-          Medium Term
+          Past 6 Months
         </button>
         <button
           className={activeTab === "longTerm" ? "active" : ""}
           onClick={() => handleTabClick("longTerm")}
         >
-          Long Term
+          Past Year
         </button>
       </div>
 
