@@ -10,12 +10,16 @@ if (!clientId) {
   );
 }
 
+// Redirect to Spotify login if no access token and no authorization code
 if (!accessToken && !code) {
   redirectToAuthCodeFlow(clientId);
 } else if (!accessToken && code) {
+  // Exchange code for access token and store it
   (async () => {
     accessToken = await getAccessToken(clientId, code);
     localStorage.setItem("spotifyAccessToken", accessToken);
+    console.log("Access token set:", accessToken); // Debugging to check if token is set
+    window.location.reload(); // Reload the page to use the new token
   })();
 }
 
@@ -37,42 +41,6 @@ export async function getAccessToken(
   });
   const { access_token } = await result.json();
   return access_token;
-}
-
-export async function fetchTopTracks(
-  token: string,
-  timeRange: string
-): Promise<any> {
-  const result = await fetch(
-    `https://api.spotify.com/v1/me/top/tracks?time_range=${timeRange}`,
-    {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
-  return await result.json();
-}
-
-export async function fetchTopArtists(
-  token: string,
-  timeRange: string
-): Promise<any> {
-  const result = await fetch(
-    `https://api.spotify.com/v1/me/top/artists?time_range=${timeRange}`,
-    {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
-  return await result.json();
-}
-
-export async function fetchProfile(token: string): Promise<UserProfile> {
-  const result = await fetch("https://api.spotify.com/v1/me", {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return await result.json();
 }
 
 export async function redirectToAuthCodeFlow(clientId: string) {

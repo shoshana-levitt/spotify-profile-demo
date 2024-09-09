@@ -7,31 +7,56 @@ type UserProfileData = {
 
 const UserProfile: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
-  const fetchUserProfile = async () => {
-    const accessToken = localStorage.getItem("spotifyAccessToken");
-    if (!accessToken) {
-      console.error("No access token available");
-      return;
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchUserProfile = async (accessToken: string) => {
+    try {
+      const response = await fetch("https://api.spotify.com/v1/me", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch user profile");
+      }
+
+      const data = await response.json();
+      const profile: UserProfileData = {
+        displayName: data.display_name,
+        imageUrl: data.images[0]?.url || "",
+      };
+      setUserProfile(profile);
+      setLoading(false);
+    } catch (error) {
+      setError("Error fetching user profile");
+      console.error(error);
     }
-    const response = await fetch("https://api.spotify.com/v1/me", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    const data = await response.json();
-    const profile: UserProfileData = {
-      displayName: data.display_name,
-      imageUrl: data.images[0]?.url || "",
-    };
-    setUserProfile(profile);
   };
 
   useEffect(() => {
-    fetchUserProfile();
+    const accessToken = localStorage.getItem("spotifyAccessToken");
+    if (!accessToken) {
+      setError("No access token available. Please log in again.");
+      setLoading(false);
+      return;
+    }
+
+    fetchUserProfile(accessToken);
   }, []);
-  if (!userProfile) {
+
+  if (loading) {
     return <p>Loading user profile...</p>;
+  }
+
+  if (error) {
+    return <p>{error}</p>;
+  }
+
+  if (!userProfile) {
+    return <p>No profile information available.</p>;
   }
 
   return (
